@@ -1,0 +1,54 @@
+1. Result  - Avg Issue Lifetime
+Select avg(z.a) from
+(Select (b.y - a.x) "a", a.issueID from (SELECT min(time) "x", issueID FROM event where issueID IN (select issueID from event where action = "closed") group by issueID) a,
+(SELECT time "y", issueID FROM event where issueID IN (select issueID from event where action = "closed") and action = "closed") b
+where a.issueID = b.issueID ) z
+
+2. Result - Hanging Issues - Not assigned to any milestones 
+Select count( distinct(a.id)) from issue a, event b where a.id = b.issueID and b.milestone is NULL
+
+3. Result - Milestone closed after Due Date
+Select count(*), (Select count(*) from milestone)b from milestone where closed_at > due_at
+
+4. Issues closed after milestone due date
+Select count(*) from event a, milestone b where a.milestone = b.id and a.action = "closed" and a.time > b.due_at
+
+5. Issues closed before milestone due date
+Select count(distinct(a.issueID)), (Select count(distinct(issueID)) from event where issueID IN (Select issueID from event where action = "closed")) from event a, milestone b where a.milestone = b.id and a.action = "closed" and a.time < b.due_at
+
+6. Issue Workload Distribution within the team
+Select count(distinct(issueID)), user from event where  action = "assigned" group by user
+
+7. Issue Creation User Distribution
+Select count(*)  from (Select min(time) "mintime",issueID from event group by issueID )a, event b where a.issueID = b.issueID and a.mintime = b.time
+
+8. Issues Not labeled
+Select (Select count(distinct(issueID)) from event)-count(distinct(issueID)), (Select count(distinct(issueID)) from event) from event where action = "labeled"
+
+9. Issue “Closing” user distribution:
+Select count(distinct(issueID)), user from event where action = "closed" group by user"22"    
+
+10. User commit distribution:
+
+11. Number of People Commenting on an issue:
+Select count(*),a.num_users from (select issueID, count(distinct user) "num_users" from comment group by issueID) a group by a.num_users
+
+12. Average number of comments per issue per group:
+Select avg(summ) from (Select sum(a) "summ", id from (Select id, (case issueID when id THEN 1 ELSE 0 END) a from issue Left OUTER JOIN comment on  issue.id = comment.issueid ) x group by id)
+
+13. Number of issues without milestone
+Select count(*) from (SELECT issueid FROM event where milestone is null group by issueid)
+
+14. Number of issues per milestones.
+Select count(*), milestone from (Select issueid, milestone from event group by issueID) group by milestone
+
+15. Commit Distribution over time for a group:
+SELECT count(*), strftime('%W', date(time, 'unixepoch')) from commits a group by strftime('%W', date(time, 'unixepoch'))
+
+16. Commit distribution over time per user per group
+SELECT count(*), strftime('%W', date(time, 'unixepoch')) from commits a where user = 'group3/user4' group by strftime('%W', date(time, 'unixepoch'))
+
+17. Issue closing after Due Date distribution
+Select count(*), strftime('%W', date(b.due_at, 'unixepoch')) from event a, milestone b where a.milestone = b.id and a.action = "closed" and a.time > b.due_at group by strftime('%W', date(b.due_at, 'unixepoch'))
+Select count(*), strftime('%W', date(due_at, 'unixepoch')) from milestone where closed_at > due_at group by strftime('%W', date(due_at, 'unixepoch'))
+
